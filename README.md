@@ -15,6 +15,7 @@
 
 [![npm version](https://img.shields.io/npm/v/okeymeta-ai-sdk.svg)](https://www.npmjs.com/package/okeymeta-ai-sdk)
 [![Downloads](https://img.shields.io/npm/dm/okeymeta-ai-sdk.svg)](https://www.npmjs.com/package/okeymeta-ai-sdk)
+[![Node.js CI](https://img.shields.io/github/workflow/status/okeymeta/okeymeta-ai-sdk/Node.js%20CI)](https://github.com/okeymeta/okeymeta-ai-sdk/actions)
 
 ---
 
@@ -75,7 +76,7 @@ const response = await client.textCompletion({
   model: 'okeyai3.0-vanguard',
   input: 'Tell me a fun fact about Nigeria.'
 });
-console.log(response);
+console.log(response); // Only the AI's response string is returned
 ```
 
 ### 2. Image-to-Text
@@ -87,16 +88,16 @@ const imgResponse = await client.imageToText({
   deepCognition: 'on',
   reasoningFormat: 'parsed' // 'raw', 'parsed', or 'hidden'
 });
-console.log(imgResponse);
+console.log(imgResponse); // Only the AI's response string is returned
 ```
 
 ### 3. Conversational AI (Context Managed)
 ```js
 const conversation = client.startConversation('okeyai3.0-vanguard');
 let reply = await conversation.send('Hello, who are you?');
-console.log(reply.response);
+console.log(reply); // Only the AI's response string is returned
 reply = await conversation.send('Tell me a joke.');
-console.log(reply.response);
+console.log(reply); // Only the AI's response string is returned
 ```
 
 ### 4. Manual APiKey (Context Key) Override
@@ -108,10 +109,31 @@ const response = await client.textCompletion({
   input: 'Continue our conversation.',
   APiKey: 'okeymeta-your_conversation_key', // Must start with 'okeymeta-'
 });
-console.log(response);
+console.log(response); // Only the AI's response string is returned
 ```
 
-### 5. Advanced: Custom Provider (Headers, Endpoints)
+### 5. Advanced: Get the Full API Response (raw mode)
+> If you want the full API response object (including model info, metrics, etc.), pass `{ raw: true }`:
+```js
+const fullTextResponse = await client.textCompletion({
+  model: 'okeyai3.0-vanguard',
+  input: 'Tell me a fun fact about Nigeria.',
+  raw: true
+});
+console.log(fullTextResponse); // Full API object
+
+const fullImageResponse = await client.imageToText({
+  model: 'okeyai4.0-DeepCognition',
+  input: 'Describe this image in detail.',
+  imgUrl: 'https://example.com/image.jpg',
+  deepCognition: 'on',
+  reasoningFormat: 'parsed',
+  raw: true
+});
+console.log(fullImageResponse); // Full API object
+```
+
+### 6. Advanced: Custom Provider (Headers, Endpoints)
 ```js
 import { createOkeyMetaProvider } from 'okeymeta-ai-sdk';
 const okeymeta = createOkeyMetaProvider({
@@ -125,7 +147,7 @@ const response = await okeymeta.textCompletion({
   model: 'okeyai2.0-basic',
   input: 'What is OkeyMeta?'
 });
-console.log(response);
+console.log(response); // Only the AI's response string is returned
 ```
 
 ---
@@ -183,6 +205,9 @@ A: Use `createOkeyMetaProvider` as shown above.
 **Q: What happens if I forget the `okeymeta-` prefix on APiKey?**
 A: The API will reject your request. Always use the correct prefix for manual context keys.
 
+**Q: How do I get the full API response object?**
+A: Pass `{ raw: true }` to `textCompletion` or `imageToText`.
+
 ---
 
 ## 🤖 Full Feature Test Script
@@ -197,7 +222,7 @@ import { OkeyMetaClient, createOkeyMetaProvider } from 'okeymeta-ai-sdk';
     model: 'okeyai3.0-vanguard',
     input: 'What is the capital of Nigeria?'
   });
-  console.log('Text:', text);
+  console.log('Text:', text); // Only the AI's response string is returned
 
   // Image-to-text
   const image = await client.imageToText({
@@ -207,14 +232,14 @@ import { OkeyMetaClient, createOkeyMetaProvider } from 'okeymeta-ai-sdk';
     deepCognition: 'on',
     reasoningFormat: 'parsed'
   });
-  console.log('Image:', image);
+  console.log('Image:', image); // Only the AI's response string is returned
 
   // Conversation
   const convo = client.startConversation('okeyai3.0-vanguard');
   let reply = await convo.send('Who won the 2018 World Cup?');
-  console.log('AI:', reply.response);
+  console.log('AI:', reply); // Only the AI's response string is returned
   reply = await convo.send('And who was the top scorer?');
-  console.log('AI:', reply.response);
+  console.log('AI:', reply); // Only the AI's response string is returned
 
   // Manual APiKey override
   const manual = await client.textCompletion({
@@ -222,7 +247,7 @@ import { OkeyMetaClient, createOkeyMetaProvider } from 'okeymeta-ai-sdk';
     input: 'Continue with the previous context.',
     APiKey: 'okeymeta-your_conversation_key', // Must start with 'okeymeta-'
   });
-  console.log('Manual APiKey:', manual);
+  console.log('Manual APiKey:', manual); // Only the AI's response string is returned
 
   // Custom provider
   const custom = createOkeyMetaProvider({
@@ -233,7 +258,25 @@ import { OkeyMetaClient, createOkeyMetaProvider } from 'okeymeta-ai-sdk';
     model: 'okeyai2.0-basic',
     input: 'Custom provider test.'
   });
-  console.log('Custom:', customResp);
+  console.log('Custom:', customResp); // Only the AI's response string is returned
+
+  // Full API response (raw mode)
+  const fullText = await client.textCompletion({
+    model: 'okeyai3.0-vanguard',
+    input: 'Show me everything.',
+    raw: true
+  });
+  console.log('Full API object (text):', fullText);
+
+  const fullImage = await client.imageToText({
+    model: 'okeyai4.0-DeepCognition',
+    input: 'Show me everything in this image.',
+    imgUrl: 'https://example.com/image.jpg',
+    deepCognition: 'on',
+    reasoningFormat: 'parsed',
+    raw: true
+  });
+  console.log('Full API object (image):', fullImage);
 })();
 ```
 

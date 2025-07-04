@@ -15,6 +15,7 @@ export interface TextCompletionParams {
   input: string;
   contextKey?: string;
   APiKey?: string;
+  raw?: boolean;
   [key: string]: any;
 }
 
@@ -26,6 +27,7 @@ export interface ImageToTextParams {
   APiKey?: string;
   deepCognition?: string;
   reasoningFormat?: 'raw' | 'parsed' | 'hidden';
+  raw?: boolean;
   [key: string]: any;
 }
 
@@ -50,13 +52,17 @@ export class OkeyMetaClient {
 
   /**
    * Generate or complete text using a specified model.
+   * Returns only the AI's response string by default. If { raw: true } is passed, returns the full API object.
    */
-  textCompletion(params: TextCompletionParams): Promise<ConversationResponse>;
+  textCompletion(params: TextCompletionParams & { raw: true }): Promise<ConversationResponse>;
+  textCompletion(params: TextCompletionParams): Promise<string>;
 
   /**
    * Generate text from an image using a specified model.
+   * Returns only the AI's response string by default. If { raw: true } is passed, returns the full API object.
    */
-  imageToText(params: ImageToTextParams): Promise<ConversationResponse>;
+  imageToText(params: ImageToTextParams & { raw: true }): Promise<ConversationResponse>;
+  imageToText(params: ImageToTextParams): Promise<string>;
 
   /**
    * Start a new conversation with a model.
@@ -82,6 +88,7 @@ export class Conversation {
 
   /**
    * Send a message and receive a response from the model.
+   * Returns only the AI's response string.
    */
-  send(input: string, params?: Record<string, any>): Promise<ConversationResponse>;
+  send(input: string, params?: Record<string, any>): Promise<string>;
 } 

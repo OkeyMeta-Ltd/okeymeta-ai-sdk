@@ -73,7 +73,7 @@ export class OkeyMetaClient {
     this.endpoints = { ...DEFAULT_MODEL_ENDPOINTS, ...endpoints };
   }
 
-  async textCompletion({ model = 'okeyai3.0-vanguard', input, contextKey, APiKey, ...params }) {
+  async textCompletion({ model = 'okeyai3.0-vanguard', input, contextKey, APiKey, raw = false, ...params }) {
     if (!input) throw new Error('Input prompt is required.');
     validateParams(model, { input, contextKey, APiKey, ...params });
     const url = this.endpoints[model];
@@ -91,10 +91,11 @@ export class OkeyMetaClient {
         return response.data;
       }
     }
-    return response.data;
+    if (raw) return response.data;
+    return response.data && typeof response.data.response === 'string' ? response.data.response : response.data;
   }
 
-  async imageToText({ model = 'okeyai4.0-DeepCognition', input, imgUrl, contextKey, APiKey, ...params }) {
+  async imageToText({ model = 'okeyai4.0-DeepCognition', input, imgUrl, contextKey, APiKey, raw = false, ...params }) {
     if (!input) throw new Error('Input prompt is required.');
     if (!imgUrl) throw new Error('imgUrl is required for image-to-text.');
     validateParams(model, { input, imgUrl, contextKey, APiKey, ...params });
@@ -113,7 +114,8 @@ export class OkeyMetaClient {
         return response.data;
       }
     }
-    return response.data;
+    if (raw) return response.data;
+    return response.data && typeof response.data.response === 'string' ? response.data.response : response.data;
   }
 
   startConversation(model = 'okeyai3.0-vanguard', contextKey) {

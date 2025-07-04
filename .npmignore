@@ -1,0 +1,23 @@
+# Exclude development, test, and IDE files from npm package
+.cursor/
+node_modules/
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+coverage/
+dist/
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+.env
+.env.*
+.DS_Store
+Thumbs.db
+
+# Allow essential files
+!README.md
+!LICENSE
+!package.json 

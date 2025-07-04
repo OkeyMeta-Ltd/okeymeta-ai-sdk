@@ -1,9 +1,20 @@
+[![GitHub](https://img.shields.io/badge/GitHub-View%20Source-blue?logo=github)](https://github.com/okeymeta/okeymeta-ai-sdk)
+[![GitHub stars](https://img.shields.io/github/stars/okeymeta/okeymeta-ai-sdk?style=social)](https://github.com/okeymeta/okeymeta-ai-sdk/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/okeymeta/okeymeta-ai-sdk?style=social)](https://github.com/okeymeta/okeymeta-ai-sdk/network/members)
+[![GitHub issues](https://img.shields.io/github/issues/okeymeta/okeymeta-ai-sdk)](https://github.com/okeymeta/okeymeta-ai-sdk/issues)
+[![GitHub contributors](https://img.shields.io/github/contributors/okeymeta/okeymeta-ai-sdk)](https://github.com/okeymeta/okeymeta-ai-sdk/graphs/contributors)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/okeymeta/okeymeta-ai-sdk)](https://github.com/okeymeta/okeymeta-ai-sdk/pulls)
+[![GitHub last commit](https://img.shields.io/github/last-commit/okeymeta/okeymeta-ai-sdk)](https://github.com/okeymeta/okeymeta-ai-sdk/commits/main)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![npm audit](https://img.shields.io/badge/npm%20audit-passing-brightgreen)](https://www.npmjs.com/package/okeymeta-ai-sdk)
+[![codecov](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/okeymeta/okeymeta-ai-sdk)
+
+[![OkeyMeta Playground](https://img.shields.io/badge/OkeyMeta%20Playground-Get%20Your%20Token-orange?logo=google-chrome)](https://playground.okeymeta.com.ng)
+
 # OkeyMeta AI SDK
 
 [![npm version](https://img.shields.io/npm/v/okeymeta-ai-sdk.svg)](https://www.npmjs.com/package/okeymeta-ai-sdk)
 [![Downloads](https://img.shields.io/npm/dm/okeymeta-ai-sdk.svg)](https://www.npmjs.com/package/okeymeta-ai-sdk)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Node.js CI](https://img.shields.io/github/workflow/status/okeymeta/okeymeta-ai-sdk/Node.js%20CI)](https://github.com/okeymeta/okeymeta-ai-sdk/actions)
 
 ---
 

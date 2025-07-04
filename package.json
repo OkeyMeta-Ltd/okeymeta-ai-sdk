@@ -1,8 +1,9 @@
 {
   "name": "okeymeta-ai-sdk",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Official SDK for OkeyMeta AI models, including OkeyAI—Africa's first trained AI. Seamlessly integrate text, image, and conversational AI into any JavaScript project with enterprise-grade reliability and security.",
   "main": "src/index.js",
+  "types": "index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

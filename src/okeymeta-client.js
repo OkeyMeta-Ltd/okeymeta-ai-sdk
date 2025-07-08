@@ -17,6 +17,22 @@ const MODEL_FEATURES = {
 function validateParams(model, params) {
   const features = MODEL_FEATURES[model];
   if (!features) throw new Error(`Unknown model: ${model}`);
+  // Enforce correct prompt parameter per model
+  if (model === 'okeyai2.0-basic' || model === 'okeyai2.0-mega') {
+    if (!('ask' in params) || !params.ask) {
+      throw new Error(`Parameter 'ask' is required for model '${model}'.`);
+    }
+    if ('input' in params) {
+      throw new Error(`Parameter 'input' is not allowed for model '${model}'. Use 'ask' instead.`);
+    }
+  } else if (model === 'okeyai3.0-vanguard' || model === 'okeyai4.0-DeepCognition') {
+    if (!('input' in params) || !params.input) {
+      throw new Error(`Parameter 'input' is required for model '${model}'.`);
+    }
+    if ('ask' in params) {
+      throw new Error(`Parameter 'ask' is not allowed for model '${model}'. Use 'input' instead.`);
+    }
+  }
   for (const key of Object.keys(params)) {
     if (!features.params.includes(key) && key !== 'contextKey' && key !== 'APiKey') {
       throw new Error(`Parameter '${key}' is not supported by model '${model}'.`);
@@ -73,49 +89,83 @@ export class OkeyMetaClient {
     this.endpoints = { ...DEFAULT_MODEL_ENDPOINTS, ...endpoints };
   }
 
-  async textCompletion({ model = 'okeyai3.0-vanguard', input, contextKey, APiKey, raw = false, ...params }) {
-    if (!input) throw new Error('Input prompt is required.');
-    validateParams(model, { input, contextKey, APiKey, ...params });
-    const url = this.endpoints[model];
-    if (!url) throw new Error(`Unknown model: ${model}`);
-    const headers = { Authorization: this.auth_token, ...this.headers };
-    const query = { input, ...params };
-    if (contextKey) query.API_KEY = contextKey;
-    if (APiKey) query.API_KEY = APiKey;
-    const response = await axios.get(url, { headers, params: query });
-    if (model === 'okeyai4.0-DeepCognition' && params.deepCognition === 'on' && params.reasoningFormat === 'raw') {
-      if (typeof response.data === 'string' && response.data.includes('<think>')) {
-        return response.data;
+  async textCompletion({ model = 'okeyai3.0-vanguard', ask, input, contextKey, APiKey, raw = false, ...params }) {
+    // Enforce correct prompt parameter per model
+    if (model === 'okeyai2.0-basic' || model === 'okeyai2.0-mega') {
+      if (!ask) throw new Error(`Parameter 'ask' is required for model '${model}'.`);
+      validateParams(model, { ask, contextKey, APiKey, ...params });
+      const url = this.endpoints[model];
+      if (!url) throw new Error(`Unknown model: ${model}`);
+      const headers = { Authorization: this.auth_token, ...this.headers };
+      const query = { ask, ...params };
+      if (contextKey) query.API_KEY = contextKey;
+      if (APiKey) query.API_KEY = APiKey;
+      const response = await axios.get(url, { headers, params: query });
+      if (raw) return response.data;
+      return response.data && typeof response.data.response === 'string' ? response.data.response : response.data;
+    } else if (model === 'okeyai3.0-vanguard' || model === 'okeyai4.0-DeepCognition') {
+      if (!input) throw new Error(`Parameter 'input' is required for model '${model}'.`);
+      validateParams(model, { input, contextKey, APiKey, ...params });
+      const url = this.endpoints[model];
+      if (!url) throw new Error(`Unknown model: ${model}`);
+      const headers = { Authorization: this.auth_token, ...this.headers };
+      const query = { input, ...params };
+      if (contextKey) query.API_KEY = contextKey;
+      if (APiKey) query.API_KEY = APiKey;
+      const response = await axios.get(url, { headers, params: query });
+      if (model === 'okeyai4.0-DeepCognition' && params.deepCognition === 'on' && params.reasoningFormat === 'raw') {
+        if (typeof response.data === 'string' && response.data.includes('<think>')) {
+          return response.data;
+        }
+        if (response.data && response.data.response && typeof response.data.response === 'string' && response.data.response.includes('<think>')) {
+          return response.data;
+        }
       }
-      if (response.data && response.data.response && typeof response.data.response === 'string' && response.data.response.includes('<think>')) {
-        return response.data;
-      }
+      if (raw) return response.data;
+      return response.data && typeof response.data.response === 'string' ? response.data.response : response.data;
+    } else {
+      throw new Error(`Unknown model: ${model}`);
     }
-    if (raw) return response.data;
-    return response.data && typeof response.data.response === 'string' ? response.data.response : response.data;
   }
 
-  async imageToText({ model = 'okeyai4.0-DeepCognition', input, imgUrl, contextKey, APiKey, raw = false, ...params }) {
-    if (!input) throw new Error('Input prompt is required.');
+  async imageToText({ model = 'okeyai4.0-DeepCognition', ask, input, imgUrl, contextKey, APiKey, raw = false, ...params }) {
     if (!imgUrl) throw new Error('imgUrl is required for image-to-text.');
-    validateParams(model, { input, imgUrl, contextKey, APiKey, ...params });
-    const url = this.endpoints[model];
-    if (!url) throw new Error(`Unknown model: ${model}`);
-    const headers = { Authorization: this.auth_token, ...this.headers };
-    const query = { input, imgUrl, ...params };
-    if (contextKey) query.API_KEY = contextKey;
-    if (APiKey) query.API_KEY = APiKey;
-    const response = await axios.get(url, { headers, params: query });
-    if (model === 'okeyai4.0-DeepCognition' && params.deepCognition === 'on' && params.reasoningFormat === 'raw') {
-      if (typeof response.data === 'string' && response.data.includes('<think>')) {
-        return response.data;
+    // Enforce correct prompt parameter per model
+    if (model === 'okeyai2.0-basic' || model === 'okeyai2.0-mega') {
+      if (!ask) throw new Error(`Parameter 'ask' is required for model '${model}'.`);
+      validateParams(model, { ask, imgUrl, contextKey, APiKey, ...params });
+      const url = this.endpoints[model];
+      if (!url) throw new Error(`Unknown model: ${model}`);
+      const headers = { Authorization: this.auth_token, ...this.headers };
+      const query = { ask, imgUrl, ...params };
+      if (contextKey) query.API_KEY = contextKey;
+      if (APiKey) query.API_KEY = APiKey;
+      const response = await axios.get(url, { headers, params: query });
+      if (raw) return response.data;
+      return response.data && typeof response.data.response === 'string' ? response.data.response : response.data;
+    } else if (model === 'okeyai3.0-vanguard' || model === 'okeyai4.0-DeepCognition') {
+      if (!input) throw new Error(`Parameter 'input' is required for model '${model}'.`);
+      validateParams(model, { input, imgUrl, contextKey, APiKey, ...params });
+      const url = this.endpoints[model];
+      if (!url) throw new Error(`Unknown model: ${model}`);
+      const headers = { Authorization: this.auth_token, ...this.headers };
+      const query = { input, imgUrl, ...params };
+      if (contextKey) query.API_KEY = contextKey;
+      if (APiKey) query.API_KEY = APiKey;
+      const response = await axios.get(url, { headers, params: query });
+      if (model === 'okeyai4.0-DeepCognition' && params.deepCognition === 'on' && params.reasoningFormat === 'raw') {
+        if (typeof response.data === 'string' && response.data.includes('<think>')) {
+          return response.data;
+        }
+        if (response.data && response.data.response && typeof response.data.response === 'string' && response.data.response.includes('<think>')) {
+          return response.data;
+        }
       }
-      if (response.data && response.data.response && typeof response.data.response === 'string' && response.data.response.includes('<think>')) {
-        return response.data;
-      }
+      if (raw) return response.data;
+      return response.data && typeof response.data.response === 'string' ? response.data.response : response.data;
+    } else {
+      throw new Error(`Unknown model: ${model}`);
     }
-    if (raw) return response.data;
-    return response.data && typeof response.data.response === 'string' ? response.data.response : response.data;
   }
 
   startConversation(model = 'okeyai3.0-vanguard', contextKey) {

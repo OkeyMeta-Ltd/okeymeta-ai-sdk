@@ -47,22 +47,19 @@ const client = new OkeyMetaClient({ auth_token: 'your_auth_token_here' });
 
 ## ✨ Features at a Glance
 
-| Model                  | Text Completion | Image-to-Text | Conversation | Advanced Reasoning | Real-Time Information¹ |
-|------------------------|:---------------:|:-------------:|:------------:|:-----------------:|:---------------------:|
-| okeyai2.0-basic        |       ✔️        |      ❌       |      ✔️      |        ❌         |         ❌            |
-| okeyai2.0-mega         |       ✔️        |      ✔️       |      ✔️      |        ❌         |         ❌            |
-| okeyai3.0-vanguard     |       ✔️        |      ✔️       |      ✔️      |        ❌         |         ✔️            |
-| okeyai4.0-DeepCognition|       ✔️        |      ✔️       |      ✔️      |        ✔️         |         ✔️            |
+| Model                  | Prompt Param | Text Completion | Image-to-Text | Conversation | Advanced Reasoning | Real-Time Information¹ |
+|------------------------|:------------:|:---------------:|:-------------:|:------------:|:-----------------:|:---------------------:|
+| okeyai2.0-basic        |    ask       |       ✔️        |      ❌       |      ✔️      |        ❌         |         ❌            |
+| okeyai2.0-mega         |    ask       |       ✔️        |      ✔️       |      ✔️      |        ❌         |         ❌            |
+| okeyai3.0-vanguard     |   input      |       ✔️        |      ✔️       |      ✔️      |        ❌         |         ✔️            |
+| okeyai4.0-DeepCognition|   input      |       ✔️        |      ✔️       |      ✔️      |        ✔️         |         ✔️            |
 
 ---
 
-¹ **Real-Time Information**: Ability to access and provide up-to-date, real-world information at inference time. Only available for `okeyai3.0-vanguard` and `okeyai4.0-DeepCognition` models.
-
-*Other features:*
-- **Text Completion**: Generate or complete text based on input prompts.
-- **Image-to-Text**: Describe or analyze images using AI.
-- **Conversation**: Maintain context across multiple turns in a dialog.
-- **Advanced Reasoning**: Enhanced logic, multi-step reasoning, or special modes (e.g., DeepCognition's `reasoningFormat`).
+**Prompt Parameter Enforcement:**
+- For `okeyai2.0-basic` and `okeyai2.0-mega`, you must use the `ask` parameter for your prompt. The `input` parameter is not allowed for these models.
+- For `okeyai3.0-vanguard` and `okeyai4.0-DeepCognition`, you must use the `input` parameter for your prompt. The `ask` parameter is not allowed for these models.
+- The SDK enforces this rule for both `textCompletion` and `imageToText` methods. Passing the wrong parameter will result in an error.
 
 ---
 
@@ -72,23 +69,38 @@ const client = new OkeyMetaClient({ auth_token: 'your_auth_token_here' });
 ```js
 import { OkeyMetaClient } from 'okeymeta-ai-sdk';
 const client = new OkeyMetaClient();
-const response = await client.textCompletion({
+// For 2.0 models:
+const response2 = await client.textCompletion({
+  model: 'okeyai2.0-basic',
+  ask: 'Tell me a fun fact about Nigeria.'
+});
+console.log(response2); // Only the AI's response string is returned
+// For 3.0/4.0 models:
+const response3 = await client.textCompletion({
   model: 'okeyai3.0-vanguard',
   input: 'Tell me a fun fact about Nigeria.'
 });
-console.log(response); // Only the AI's response string is returned
+console.log(response3); // Only the AI's response string is returned
 ```
 
 ### 2. Image-to-Text
 ```js
-const imgResponse = await client.imageToText({
+// For 2.0-mega:
+const imgResponse2 = await client.imageToText({
+  model: 'okeyai2.0-mega',
+  ask: 'Describe this image in detail.',
+  imgUrl: 'https://example.com/image.jpg'
+});
+console.log(imgResponse2); // Only the AI's response string is returned
+// For 3.0/4.0 models:
+const imgResponse3 = await client.imageToText({
   model: 'okeyai4.0-DeepCognition',
   input: 'Describe this image in detail.',
   imgUrl: 'https://example.com/image.jpg',
   deepCognition: 'on',
   reasoningFormat: 'parsed' // 'raw', 'parsed', or 'hidden'
 });
-console.log(imgResponse); // Only the AI's response string is returned
+console.log(imgResponse3); // Only the AI's response string is returned
 ```
 
 ### 3. Conversational AI (Context Managed)
@@ -145,7 +157,7 @@ const okeymeta = createOkeyMetaProvider({
 });
 const response = await okeymeta.textCompletion({
   model: 'okeyai2.0-basic',
-  input: 'What is OkeyMeta?'
+  ask: 'What is OkeyMeta?'
 });
 console.log(response); // Only the AI's response string is returned
 ```
@@ -164,12 +176,22 @@ console.log(response); // Only the AI's response string is returned
 
 ## ⚠️ Error Handling
 - All methods throw on missing/invalid parameters or unsupported features per model.
+- The SDK enforces the use of the correct prompt parameter for each model:
+  - For `okeyai2.0-basic` and `okeyai2.0-mega`, you must use `ask` (using `input` will throw an error).
+  - For `okeyai3.0-vanguard` and `okeyai4.0-DeepCognition`, you must use `input` (using `ask` will throw an error).
 - Use try/catch for robust integration:
 ```js
 try {
-  const response = await client.textCompletion({ model: 'okeyai2.0-basic', input: '' });
+  // This will throw for 2.0 models because 'input' is not allowed:
+  const response = await client.textCompletion({ model: 'okeyai2.0-basic', input: 'Hello' });
 } catch (err) {
-  console.error('OkeyMeta error:', err.message);
+  console.error('OkeyMeta error:', err.message); // Parameter 'input' is not allowed for model 'okeyai2.0-basic'. Use 'ask' instead.
+}
+try {
+  // This will throw for 3.0/4.0 models because 'ask' is not allowed:
+  const response = await client.textCompletion({ model: 'okeyai3.0-vanguard', ask: 'Hello' });
+} catch (err) {
+  console.error('OkeyMeta error:', err.message); // Parameter 'ask' is not allowed for model 'okeyai3.0-vanguard'. Use 'input' instead.
 }
 ```
 
@@ -193,6 +215,12 @@ try {
 ---
 
 ## ❓ FAQ
+**Q: What prompt parameter should I use for my model?**
+A: For `okeyai2.0-basic` and `okeyai2.0-mega`, always use `ask`. For `okeyai3.0-vanguard` and `okeyai4.0-DeepCognition`, always use `input`. The SDK enforces this and will throw an error if you use the wrong parameter.
+
+**Q: What happens if I use the wrong prompt parameter?**
+A: The SDK will throw a clear error. For example, using `input` with a 2.0 model will throw: `Parameter 'input' is not allowed for model 'okeyai2.0-basic'. Use 'ask' instead.`
+
 **Q: What is the difference between auth_token and APiKey?**
 A: `auth_token` is your main API access credential. `APiKey` is a context key for managing conversations—handled automatically unless you need advanced control. If you pass it manually, it must start with `okeymeta-`.
 

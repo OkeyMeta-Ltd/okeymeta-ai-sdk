@@ -315,6 +315,30 @@ import { OkeyMetaClient, createOkeyMetaProvider } from 'okeymeta-ai-sdk';
     raw: true
   });
   console.log('Full API object (image):', fullImage);
+
+  // Fine-tune a model (get only the accessKey)
+  const accessKey = await client.fineTuneModel({
+    baseModel: 'okeyai3.0-vanguard',
+    modelName: 'LegalAssistant',
+    version: '1.0',
+    developer: 'Jane Doe',
+    specialization: 'legal_consulting',
+    tone: 'Legal', // Must be one of the allowed values
+    instructions: 'Focus on legal terminology and contract advice',
+    trainingData: [
+      { input: 'What is a contract?', output: 'A contract is a legally binding agreement.' },
+      { input: 'Define tort law.', output: 'Tort law deals with civil wrongs and damages.' }
+    ]
+  });
+  console.log('Fine-tune accessKey:', accessKey);
+
+  // Use the fine-tuned model
+  const fineTunedResult = await client.useFineTunedModel({
+    baseModel: 'okeyai3.0-vanguard',
+    accessKey,
+    input: 'What is a contract?'
+  });
+  console.log('Fine-tuned result:', fineTunedResult);
 })();
 ```
 
@@ -323,6 +347,16 @@ import { OkeyMetaClient, createOkeyMetaProvider } from 'okeymeta-ai-sdk';
 ## 🔬 Fine-tuning OkeyMeta Models (3.0 & 4.0)
 
 You can fine-tune OkeyMeta 3.0 and 4.0 models for your own domain, tone, or dataset. The SDK provides a simple, production-grade interface for both fine-tuning and using your custom model.
+
+**Allowed tone values:**
+- Professional
+- Casual
+- Friendly
+- Technical
+- Academic
+- Medical
+- Legal
+- Business
 
 ### 1. Fine-tune a Model
 ```js
@@ -333,7 +367,7 @@ const accessKey = await client.fineTuneModel({
   version: '1.0',
   developer: 'Dr.Smith',
   specialization: 'medical_consulting',
-  tone: 'professional',
+  tone: 'Professional', // Must be one of the allowed values
   instructions: 'Focus on medical terminology and healthcare advice',
   trainingData: [
     { input: 'What is hypertension?', output: 'Hypertension is high blood pressure.' },
@@ -349,7 +383,7 @@ const fineTuneResponse = await client.fineTuneModel({
   version: '1.0',
   developer: 'Dr.Smith',
   specialization: 'medical_consulting',
-  tone: 'professional',
+  tone: 'Professional', // Must be one of the allowed values
   instructions: 'Focus on medical terminology and healthcare advice',
   trainingData: [
     { input: 'What is hypertension?', output: 'Hypertension is high blood pressure.' },

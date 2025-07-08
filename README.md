@@ -56,6 +56,16 @@ const client = new OkeyMetaClient({ auth_token: 'your_auth_token_here' });
 
 ---
 
+¹ **Real-Time Information**: Ability to access and provide up-to-date, real-world information at inference time. Only available for `okeyai3.0-vanguard` and `okeyai4.0-DeepCognition` models.
+
+*Other features:*
+- **Text Completion**: Generate or complete text based on input prompts.
+- **Image-to-Text**: Describe or analyze images using AI.
+- **Conversation**: Maintain context across multiple turns in a dialog.
+- **Advanced Reasoning**: Enhanced logic, multi-step reasoning, or special modes (e.g., DeepCognition's `reasoningFormat`).
+
+---
+
 **Prompt Parameter Enforcement:**
 - For `okeyai2.0-basic` and `okeyai2.0-mega`, you must use the `ask` parameter for your prompt. The `input` parameter is not allowed for these models.
 - For `okeyai3.0-vanguard` and `okeyai4.0-DeepCognition`, you must use the `input` parameter for your prompt. The `ask` parameter is not allowed for these models.

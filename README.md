@@ -320,6 +320,89 @@ import { OkeyMetaClient, createOkeyMetaProvider } from 'okeymeta-ai-sdk';
 
 ---
 
+## 🔬 Fine-tuning OkeyMeta Models (3.0 & 4.0)
+
+You can fine-tune OkeyMeta 3.0 and 4.0 models for your own domain, tone, or dataset. The SDK provides a simple, production-grade interface for both fine-tuning and using your custom model.
+
+### 1. Fine-tune a Model
+```js
+// Get only the accessKey (default):
+const accessKey = await client.fineTuneModel({
+  baseModel: 'okeyai3.0-vanguard',
+  modelName: 'MedicalAssistant',
+  version: '1.0',
+  developer: 'Dr.Smith',
+  specialization: 'medical_consulting',
+  tone: 'professional',
+  instructions: 'Focus on medical terminology and healthcare advice',
+  trainingData: [
+    { input: 'What is hypertension?', output: 'Hypertension is high blood pressure.' },
+    { input: 'Give me a healthy diet tip.', output: 'Eat more vegetables and reduce salt intake.' }
+  ]
+});
+console.log(accessKey); // Only the accessKey string
+
+// Get the full API response (set raw: true):
+const fineTuneResponse = await client.fineTuneModel({
+  baseModel: 'okeyai3.0-vanguard',
+  modelName: 'MedicalAssistant',
+  version: '1.0',
+  developer: 'Dr.Smith',
+  specialization: 'medical_consulting',
+  tone: 'professional',
+  instructions: 'Focus on medical terminology and healthcare advice',
+  trainingData: [
+    { input: 'What is hypertension?', output: 'Hypertension is high blood pressure.' },
+    { input: 'Give me a healthy diet tip.', output: 'Eat more vegetables and reduce salt intake.' }
+  ],
+  raw: true
+});
+console.log(fineTuneResponse); // Full API object
+```
+
+**Sample Response:**
+```json
+{
+  "status": "200",
+  "message": "Fine-tuned model created successfully",
+  "accessKey": "c74914909adbac...f63b884",
+  "modelDetails": {
+    "name": "MedicalAssistant",
+    "version": "1.0",
+    "developer": "Dr.Smith",
+    "specialization": "medical_consulting",
+    "tone": "professional",
+    "baseModel": "OkeyAI 3.0 Vanguard",
+    "originalCreator": "OkeyMeta Programming Team",
+    "originalDeveloper": "Okechukwu Nwaozor"
+  }
+}
+```
+
+### 2. Use Your Fine-tuned Model
+```js
+const result = await client.useFineTunedModel({
+  baseModel: 'okeyai3.0-vanguard', // or 'okeyai4.0-DeepCognition'
+  accessKey: fineTuneResponse.accessKey,
+  input: 'What is hypertension?'
+});
+console.log(result);
+
+// For image-to-text with a fine-tuned model:
+const imgResult = await client.useFineTunedModel({
+  baseModel: 'okeyai4.0-DeepCognition',
+  accessKey: fineTuneResponse.accessKey,
+  input: 'Describe this image.',
+  imgUrl: 'https://example.com/image.jpg',
+  extra: { deepCognition: 'on', reasoningFormat: 'parsed' }
+});
+console.log(imgResult);
+```
+
+**Note:** Fine-tuning is only supported for OkeyMeta 3.0 and 4.0 models. Always save your accessKey securely.
+
+---
+
 ## 📦 Publishing & Contributing
 - To publish: `npm publish`
 - To test: See the script above or run in your preferred JS environment

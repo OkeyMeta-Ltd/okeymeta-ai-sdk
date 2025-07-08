@@ -168,6 +168,69 @@ export class OkeyMetaClient {
     }
   }
 
+  /**
+   * Fine-tune a model (OkeyMeta 3.0/4.0)
+   * @param {Object} options - Fine-tuning options
+   * @param {string} options.baseModel - The base model to fine-tune (e.g., 'okeyai3.0-vanguard', 'okeyai4.0-DeepCognition')
+   * @param {string} options.modelName - Name for your fine-tuned model
+   * @param {string} options.version - Version string
+   * @param {string} options.developer - Developer name
+   * @param {string} options.specialization - Specialization/domain
+   * @param {string} options.tone - Tone/style
+   * @param {string} options.instructions - Instructions for the model
+   * @param {Array|Object} options.trainingData - Array or object of training examples
+   * @param {boolean} [options.raw=false] - If true, return the full API response; otherwise, return only the accessKey
+   * @returns {Promise<Object|string>} Fine-tune response (accessKey or full API object)
+   */
+  async fineTuneModel({ baseModel, modelName, version, developer, specialization, tone, instructions, trainingData, raw = false }) {
+    if (!baseModel || !modelName || !version || !developer || !specialization || !tone || !instructions || !trainingData) {
+      throw new Error('All fine-tuning parameters are required.');
+    }
+    const url = this.endpoints[baseModel];
+    if (!url) throw new Error(`Unknown base model: ${baseModel}`);
+    const params = {
+      mode: 'finetune',
+      modelName,
+      version,
+      developer,
+      specialization,
+      tone,
+      instructions,
+      trainingData: JSON.stringify(trainingData)
+    };
+    const headers = { Authorization: this.auth_token, ...this.headers };
+    const response = await axios.get(url, { headers, params });
+    if (raw) return response.data;
+    return response.data && response.data.accessKey ? response.data.accessKey : response.data;
+  }
+
+  /**
+   * Use a fine-tuned model (OkeyMeta 3.0/4.0)
+   * @param {Object} options - Usage options
+   * @param {string} options.baseModel - The base model (e.g., 'okeyai3.0-vanguard', 'okeyai4.0-DeepCognition')
+   * @param {string} options.accessKey - The fine-tuned model access key
+   * @param {string} options.input - Input prompt (required)
+   * @param {string} [options.imgUrl] - Optional image URL (for image-to-text)
+   * @param {Object} [options.extra] - Any extra params (e.g., deepCognition, reasoningFormat)
+   * @returns {Promise<Object>} Model response
+   */
+  async useFineTunedModel({ baseModel, accessKey, input, imgUrl, extra = {} }) {
+    if (!baseModel || !accessKey || !input) {
+      throw new Error('baseModel, accessKey, and input are required.');
+    }
+    const url = this.endpoints[baseModel];
+    if (!url) throw new Error(`Unknown base model: ${baseModel}`);
+    const params = {
+      input,
+      fineTunedAccessKey: accessKey,
+      ...extra
+    };
+    if (imgUrl) params.imgUrl = imgUrl;
+    const headers = { Authorization: this.auth_token, ...this.headers };
+    const response = await axios.get(url, { headers, params });
+    return response.data;
+  }
+
   startConversation(model = 'okeyai3.0-vanguard', contextKey) {
     return new Conversation({ client: this, model, contextKey });
   }

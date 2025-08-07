@@ -93,6 +93,24 @@ const response3 = await client.textCompletion({
 console.log(response3); // Only the AI's response string is returned
 ```
 
+### 1.1. Streaming Text Completion
+```js
+// Stream text completion word by word
+const stream = client.textCompletion({
+  model: 'okeyai3.0-vanguard',
+  input: 'Write a short story about a Nigerian hero.',
+  stream: true
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.chunk); // Print each word as it arrives
+  if (chunk.done) {
+    console.log('\n--- Story complete ---');
+    console.log('Full response:', chunk.fullResponse);
+  }
+}
+```
+
 ### 2. Image-to-Text
 ```js
 // For 2.0-mega:
@@ -113,6 +131,27 @@ const imgResponse3 = await client.imageToText({
 console.log(imgResponse3); // Only the AI's response string is returned
 ```
 
+### 2.1. Streaming Image-to-Text
+```js
+// Stream image analysis word by word
+const imgStream = client.imageToText({
+  model: 'okeyai4.0-DeepCognition',
+  input: 'Describe this image in detail.',
+  imgUrl: 'https://example.com/image.jpg',
+  deepCognition: 'on',
+  reasoningFormat: 'parsed',
+  stream: true
+});
+
+for await (const chunk of imgStream) {
+  process.stdout.write(chunk.chunk); // Print each word as it arrives
+  if (chunk.done) {
+    console.log('\n--- Image analysis complete ---');
+    console.log('Full response:', chunk.fullResponse);
+  }
+}
+```
+
 ### 3. Conversational AI (Context Managed)
 ```js
 const conversation = client.startConversation('okeyai3.0-vanguard');
@@ -120,6 +159,19 @@ let reply = await conversation.send('Hello, who are you?');
 console.log(reply); // Only the AI's response string is returned
 reply = await conversation.send('Tell me a joke.');
 console.log(reply); // Only the AI's response string is returned
+```
+
+### 3.1. Streaming Conversations
+```js
+const conversation = client.startConversation('okeyai3.0-vanguard');
+const stream = conversation.sendStream('Tell me a story about Nigeria.');
+for await (const chunk of stream) {
+  process.stdout.write(chunk.chunk); // Print each word as it arrives
+  if (chunk.done) {
+    console.log('\n--- Story complete ---');
+    console.log('Full response:', chunk.fullResponse);
+  }
+}
 ```
 
 ### 4. Manual APiKey (Context Key) Override
@@ -246,6 +298,15 @@ A: The API will reject your request. Always use the correct prefix for manual co
 **Q: How do I get the full API response object?**
 A: Pass `{ raw: true }` to `textCompletion` or `imageToText`.
 
+**Q: How does streaming work?**
+A: Pass `{ stream: true }` to `textCompletion` or `imageToText`. This returns an async generator that yields chunks word by word. Each chunk contains `{ chunk, fullResponse, done, apiResponse }`.
+
+**Q: Can I use streaming with raw mode?**
+A: No. Streaming is not compatible with raw mode. Use either `{ stream: true }` or `{ raw: true }`, but not both.
+
+**Q: What's the difference between streaming and regular responses?**
+A: Regular responses wait for the complete response and return it all at once. Streaming returns each word as it's processed, providing real-time feedback to users.
+
 ---
 
 ## 🤖 Full Feature Test Script
@@ -315,6 +376,46 @@ import { OkeyMetaClient, createOkeyMetaProvider } from 'okeymeta-ai-sdk';
     raw: true
   });
   console.log('Full API object (image):', fullImage);
+
+  // Streaming examples
+  console.log('\n--- Streaming Text Completion ---');
+  const textStream = client.textCompletion({
+    model: 'okeyai3.0-vanguard',
+    input: 'Write a short story about Nigeria.',
+    stream: true
+  });
+  for await (const chunk of textStream) {
+    process.stdout.write(chunk.chunk);
+    if (chunk.done) {
+      console.log('\n--- Streaming complete ---');
+    }
+  }
+
+  console.log('\n--- Streaming Image Analysis ---');
+  const imgStream = client.imageToText({
+    model: 'okeyai4.0-DeepCognition',
+    input: 'Describe this image.',
+    imgUrl: 'https://example.com/image.jpg',
+    deepCognition: 'on',
+    reasoningFormat: 'parsed',
+    stream: true
+  });
+  for await (const chunk of imgStream) {
+    process.stdout.write(chunk.chunk);
+    if (chunk.done) {
+      console.log('\n--- Image streaming complete ---');
+    }
+  }
+
+  console.log('\n--- Streaming Conversation ---');
+  const convoStream = client.startConversation('okeyai3.0-vanguard');
+  const streamReply = convoStream.sendStream('Tell me about Nigerian culture.');
+  for await (const chunk of streamReply) {
+    process.stdout.write(chunk.chunk);
+    if (chunk.done) {
+      console.log('\n--- Conversation streaming complete ---');
+    }
+  }
 
   // Fine-tune a model (get only the accessKey)
   const accessKey = await client.fineTuneModel({

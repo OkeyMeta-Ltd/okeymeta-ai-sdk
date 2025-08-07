@@ -16,6 +16,7 @@ export interface TextCompletionParams {
   contextKey?: string;
   APiKey?: string;
   raw?: boolean;
+  stream?: boolean;
   [key: string]: any;
 }
 
@@ -28,6 +29,7 @@ export interface ImageToTextParams {
   deepCognition?: string;
   reasoningFormat?: 'raw' | 'parsed' | 'hidden';
   raw?: boolean;
+  stream?: boolean;
   [key: string]: any;
 }
 
@@ -44,6 +46,13 @@ export interface ConversationResponse {
   [key: string]: any;
 }
 
+export interface StreamingResponse {
+  chunk: string;
+  fullResponse: string;
+  done: boolean;
+  apiResponse?: any;
+}
+
 /**
  * Main OkeyMetaClient class for interacting with OkeyMeta AI models.
  */
@@ -53,15 +62,19 @@ export class OkeyMetaClient {
   /**
    * Generate or complete text using a specified model.
    * Returns only the AI's response string by default. If { raw: true } is passed, returns the full API object.
+   * If { stream: true } is passed, returns an async generator that yields streaming responses.
    */
   textCompletion(params: TextCompletionParams & { raw: true }): Promise<ConversationResponse>;
+  textCompletion(params: TextCompletionParams & { stream: true }): AsyncGenerator<StreamingResponse>;
   textCompletion(params: TextCompletionParams): Promise<string>;
 
   /**
    * Generate text from an image using a specified model.
    * Returns only the AI's response string by default. If { raw: true } is passed, returns the full API object.
+   * If { stream: true } is passed, returns an async generator that yields streaming responses.
    */
   imageToText(params: ImageToTextParams & { raw: true }): Promise<ConversationResponse>;
+  imageToText(params: ImageToTextParams & { stream: true }): AsyncGenerator<StreamingResponse>;
   imageToText(params: ImageToTextParams): Promise<string>;
 
   /**
@@ -91,4 +104,10 @@ export class Conversation {
    * Returns only the AI's response string.
    */
   send(input: string, params?: Record<string, any>): Promise<string>;
+
+  /**
+   * Send a message and receive a streaming response from the model.
+   * Returns an async generator that yields streaming responses.
+   */
+  sendStream(input: string, params?: Record<string, any>): AsyncGenerator<StreamingResponse>;
 } 

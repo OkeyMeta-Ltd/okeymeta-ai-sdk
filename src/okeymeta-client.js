@@ -34,7 +34,7 @@ function validateParams(model, params) {
     }
   }
   for (const key of Object.keys(params)) {
-    if (!features.params.includes(key) && key !== 'contextKey' && key !== 'APiKey') {
+    if (!features.params.includes(key) && key !== 'contextKey' && key !== 'APiKey' && key !== 'stream') {
       throw new Error(`Parameter '${key}' is not supported by model '${model}'.`);
     }
   }
@@ -69,6 +69,26 @@ class Conversation {
     this.contextKey = response.API_KEY || response.APiKey || this.contextKey;
     return response;
   }
+
+  async *sendStream(input, params = {}) {
+    const stream = this.client.textCompletion({
+      model: this.model,
+      input,
+      contextKey: this.contextKey,
+      stream: true,
+      ...params,
+    });
+    
+    let lastResponse = null;
+    for await (const chunk of stream) {
+      lastResponse = chunk;
+      yield chunk;
+    }
+    
+    if (lastResponse && lastResponse.apiResponse) {
+      this.contextKey = lastResponse.apiResponse.API_KEY || lastResponse.apiResponse.APiKey || this.contextKey;
+    }
+  }
 }
 
 export function createOkeyMetaProvider({
@@ -89,7 +109,101 @@ export class OkeyMetaClient {
     this.endpoints = { ...DEFAULT_MODEL_ENDPOINTS, ...endpoints };
   }
 
-  async textCompletion({ model = 'okeyai3.0-vanguard', ask, input, contextKey, APiKey, raw = false, ...params }) {
+  async *streamTextCompletion({ model = 'okeyai3.0-vanguard', ask, input, contextKey, APiKey, ...params }) {
+    if (params.raw) {
+      throw new Error('Streaming is not supported with raw mode. Remove raw: true to enable streaming.');
+    }
+
+    let fullResponse = '';
+    let apiResponse = null;
+
+    // Enforce correct prompt parameter per model
+    if (model === 'okeyai2.0-basic' || model === 'okeyai2.0-mega') {
+      if (!ask) throw new Error(`Parameter 'ask' is required for model '${model}'.`);
+      validateParams(model, { ask, contextKey, APiKey, ...params });
+      const url = this.endpoints[model];
+      if (!url) throw new Error(`Unknown model: ${model}`);
+      const headers = { Authorization: this.auth_token, ...this.headers };
+      const query = { ask, ...params };
+      if (contextKey) query.API_KEY = contextKey;
+      if (APiKey) query.API_KEY = APiKey;
+      
+      try {
+        const response = await axios.get(url, { headers, params: query });
+        apiResponse = response.data;
+        const responseText = response.data && typeof response.data.response === 'string' ? response.data.response : response.data;
+        
+        if (typeof responseText === 'string') {
+          const words = responseText.split(' ');
+          for (let i = 0; i < words.length; i++) {
+            const chunk = words[i] + (i < words.length - 1 ? ' ' : '');
+            fullResponse += chunk;
+            yield { chunk, fullResponse, done: false };
+          }
+        } else {
+          yield { chunk: responseText, fullResponse: responseText, done: false };
+        }
+      } catch (error) {
+        throw new Error(`Streaming error: ${error.message}`);
+      }
+    } else if (model === 'okeyai3.0-vanguard' || model === 'okeyai4.0-DeepCognition') {
+      if (!input) throw new Error(`Parameter 'input' is required for model '${model}'.`);
+      validateParams(model, { input, contextKey, APiKey, ...params });
+      const url = this.endpoints[model];
+      if (!url) throw new Error(`Unknown model: ${model}`);
+      const headers = { Authorization: this.auth_token, ...this.headers };
+      const query = { input, ...params };
+      if (contextKey) query.API_KEY = contextKey;
+      if (APiKey) query.API_KEY = APiKey;
+      
+      try {
+        const response = await axios.get(url, { headers, params: query });
+        apiResponse = response.data;
+        let responseText = response.data && typeof response.data.response === 'string' ? response.data.response : response.data;
+        
+        if (model === 'okeyai4.0-DeepCognition' && params.deepCognition === 'on' && params.reasoningFormat === 'raw') {
+          if (typeof response.data === 'string' && response.data.includes('<think>')) {
+            responseText = response.data;
+          } else if (response.data && response.data.response && typeof response.data.response === 'string' && response.data.response.includes('<think>')) {
+            responseText = response.data;
+          }
+        }
+        
+        if (typeof responseText === 'string') {
+          const words = responseText.split(' ');
+          for (let i = 0; i < words.length; i++) {
+            const chunk = words[i] + (i < words.length - 1 ? ' ' : '');
+            fullResponse += chunk;
+            yield { chunk, fullResponse, done: false };
+          }
+        } else {
+          yield { chunk: responseText, fullResponse: responseText, done: false };
+        }
+      } catch (error) {
+        throw new Error(`Streaming error: ${error.message}`);
+      }
+    } else {
+      throw new Error(`Unknown model: ${model}`);
+    }
+
+    yield { chunk: '', fullResponse, done: true, apiResponse };
+  }
+
+  textCompletion({ model = 'okeyai3.0-vanguard', ask, input, contextKey, APiKey, raw = false, stream = false, ...params }) {
+    if (stream && raw) {
+      throw new Error('Streaming is not supported with raw mode. Remove raw: true to enable streaming.');
+    }
+
+    if (stream) {
+      return this.streamTextCompletion({ model, ask, input, contextKey, APiKey, ...params });
+    }
+
+    // For non-streaming, use async wrapper
+    return this._textCompletionAsync({ model, ask, input, contextKey, APiKey, raw, ...params });
+  }
+
+  async _textCompletionAsync({ model = 'okeyai3.0-vanguard', ask, input, contextKey, APiKey, raw = false, ...params }) {
+
     // Enforce correct prompt parameter per model
     if (model === 'okeyai2.0-basic' || model === 'okeyai2.0-mega') {
       if (!ask) throw new Error(`Parameter 'ask' is required for model '${model}'.`);
@@ -128,7 +242,103 @@ export class OkeyMetaClient {
     }
   }
 
-  async imageToText({ model = 'okeyai4.0-DeepCognition', ask, input, imgUrl, contextKey, APiKey, raw = false, ...params }) {
+
+
+  async *streamImageToText({ model = 'okeyai4.0-DeepCognition', ask, input, imgUrl, contextKey, APiKey, ...params }) {
+    if (params.raw) {
+      throw new Error('Streaming is not supported with raw mode. Remove raw: true to enable streaming.');
+    }
+
+    if (!imgUrl) throw new Error('imgUrl is required for image-to-text.');
+    let fullResponse = '';
+    let apiResponse = null;
+
+    // Enforce correct prompt parameter per model
+    if (model === 'okeyai2.0-basic' || model === 'okeyai2.0-mega') {
+      if (!ask) throw new Error(`Parameter 'ask' is required for model '${model}'.`);
+      validateParams(model, { ask, imgUrl, contextKey, APiKey, ...params });
+      const url = this.endpoints[model];
+      if (!url) throw new Error(`Unknown model: ${model}`);
+      const headers = { Authorization: this.auth_token, ...this.headers };
+      const query = { ask, imgUrl, ...params };
+      if (contextKey) query.API_KEY = contextKey;
+      if (APiKey) query.API_KEY = APiKey;
+      
+      try {
+        const response = await axios.get(url, { headers, params: query });
+        apiResponse = response.data;
+        const responseText = response.data && typeof response.data.response === 'string' ? response.data.response : response.data;
+        
+        if (typeof responseText === 'string') {
+          const words = responseText.split(' ');
+          for (let i = 0; i < words.length; i++) {
+            const chunk = words[i] + (i < words.length - 1 ? ' ' : '');
+            fullResponse += chunk;
+            yield { chunk, fullResponse, done: false };
+          }
+        } else {
+          yield { chunk: responseText, fullResponse: responseText, done: false };
+        }
+      } catch (error) {
+        throw new Error(`Streaming error: ${error.message}`);
+      }
+    } else if (model === 'okeyai3.0-vanguard' || model === 'okeyai4.0-DeepCognition') {
+      if (!input) throw new Error(`Parameter 'input' is required for model '${model}'.`);
+      validateParams(model, { input, imgUrl, contextKey, APiKey, ...params });
+      const url = this.endpoints[model];
+      if (!url) throw new Error(`Unknown model: ${model}`);
+      const headers = { Authorization: this.auth_token, ...this.headers };
+      const query = { input, imgUrl, ...params };
+      if (contextKey) query.API_KEY = contextKey;
+      if (APiKey) query.API_KEY = APiKey;
+      
+      try {
+        const response = await axios.get(url, { headers, params: query });
+        apiResponse = response.data;
+        let responseText = response.data && typeof response.data.response === 'string' ? response.data.response : response.data;
+        
+        if (model === 'okeyai4.0-DeepCognition' && params.deepCognition === 'on' && params.reasoningFormat === 'raw') {
+          if (typeof response.data === 'string' && response.data.includes('<think>')) {
+            responseText = response.data;
+          } else if (response.data && response.data.response && typeof response.data.response === 'string' && response.data.response.includes('<think>')) {
+            responseText = response.data;
+          }
+        }
+        
+        if (typeof responseText === 'string') {
+          const words = responseText.split(' ');
+          for (let i = 0; i < words.length; i++) {
+            const chunk = words[i] + (i < words.length - 1 ? ' ' : '');
+            fullResponse += chunk;
+            yield { chunk, fullResponse, done: false };
+          }
+        } else {
+          yield { chunk: responseText, fullResponse: responseText, done: false };
+        }
+      } catch (error) {
+        throw new Error(`Streaming error: ${error.message}`);
+      }
+    } else {
+      throw new Error(`Unknown model: ${model}`);
+    }
+
+    yield { chunk: '', fullResponse, done: true, apiResponse };
+  }
+
+  imageToText({ model = 'okeyai4.0-DeepCognition', ask, input, imgUrl, contextKey, APiKey, raw = false, stream = false, ...params }) {
+    if (stream && raw) {
+      throw new Error('Streaming is not supported with raw mode. Remove raw: true to enable streaming.');
+    }
+
+    if (stream) {
+      return this.streamImageToText({ model, ask, input, imgUrl, contextKey, APiKey, ...params });
+    }
+
+    // For non-streaming, use async wrapper
+    return this._imageToTextAsync({ model, ask, input, imgUrl, contextKey, APiKey, raw, ...params });
+  }
+
+  async _imageToTextAsync({ model = 'okeyai4.0-DeepCognition', ask, input, imgUrl, contextKey, APiKey, raw = false, ...params }) {
     if (!imgUrl) throw new Error('imgUrl is required for image-to-text.');
     // Enforce correct prompt parameter per model
     if (model === 'okeyai2.0-basic' || model === 'okeyai2.0-mega') {
@@ -167,6 +377,8 @@ export class OkeyMetaClient {
       throw new Error(`Unknown model: ${model}`);
     }
   }
+
+
 
   /**
    * Fine-tune a model (OkeyMeta 3.0/4.0)
